@@ -37,8 +37,8 @@ class AuthenticationRequest:
 
     def __init__(self, service):
         random.seed(datetime.now())
-        now = datetime.now() # up to 24h old
-        tomorrow = now + timedelta(hours=10) # up to 24h in the future
+        now = datetime.now()  # up to 24h old
+        tomorrow = now + timedelta(hours=10)  # up to 24h in the future
 
         request_xml = (
             E.loginTicketRequest(
