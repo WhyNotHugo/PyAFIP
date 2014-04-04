@@ -2,6 +2,7 @@
 URLs for the endpoints for both the test and prod servers
 """
 
+
 class Production:
 
     WSAA = "https://wsaa.afip.gov.ar/ws/services/LoginCms?wsdl"

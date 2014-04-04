@@ -35,9 +35,9 @@ class InvoiceLine:
 
     def __init__(self, concept, document_type, document_number, from_invoice,
                  to_invoice, date, total, service_from_date, service_to_date,
-                 expiration_date, net_untaxed = 0, net_taxed = None,
-                 exempt_amount = 0, tax_amount = 0, vat_amount = 0,
-                 currency = "PES", currency_quote = "1.0000"):
+                 expiration_date, net_untaxed=0, net_taxed=None,
+                 exempt_amount=0, tax_amount=0, vat_amount=0,
+                 currency="PES", currency_quote="1.0000"):
         self.concept = concept
         self.document_type = document_type
         self.document_number = document_number
@@ -68,8 +68,6 @@ class ElectronicInvoiceService:
         self.auth.Sign = sign
         self.auth.Cuit = cuit
 
-    ### Services
-
     def last_authorized_id(self, punto_venta, tipo_comprobante):
         response_xml = self.client.service. \
             FECompUltimoAutorizado(self.auth, punto_venta, tipo_comprobante)
@@ -80,7 +78,7 @@ class ElectronicInvoiceService:
 
         print self.client
 
-        #req.FeCabReq = self.client.factory.create('FECabRequest')
+        # req.FeCabReq = self.client.factory.create('FECabRequest')
         req.FeCabReq.CantReg = invoice.amount
         req.FeCabReq.PtoVta = invoice.sales_point
         req.FeCabReq.CbteTipo = invoice.invoice_type

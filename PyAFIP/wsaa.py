@@ -28,8 +28,6 @@ import email
 import random
 
 
-
-
 class AuthenticationRequest(BaseRequest):
 
     TOKEN_XPATH = "/loginTicketResponse/credentials/token"
@@ -84,8 +82,10 @@ class AuthenticationRequest(BaseRequest):
 
 if __name__ == "__main__":
     from endpoints import Testing
-    request = AuthenticationRequest(Testing(), "hyperion.key",
-                                        "hyperion.crt", "wsfe")
+    request = AuthenticationRequest(Testing(),
+                                    "hyperion.key",
+                                    "hyperion.crt",
+                                    "wsfe")
     token, sign = request.authenticate()
 
     print("token: {}\n\nsign: {}".format(token, sign))
