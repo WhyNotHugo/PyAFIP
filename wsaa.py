@@ -21,21 +21,23 @@ from StringIO import StringIO
 from datetime import datetime, timedelta
 from lxml import etree
 from lxml.builder import E
+from utils import BaseRequest
 from suds.client import Client
 
 import email
 import random
 
 
-class AuthenticationRequest:
 
-    PROD_WSDL = "https://wsaa.afip.gov.ar/ws/services/LoginCms?wsdl"
-    TEST_WSDL = "https://wsaahomo.afip.gov.ar/ws/services/LoginCms?wsdl"
+
+class AuthenticationRequest(BaseRequest):
 
     TOKEN_XPATH = "/loginTicketResponse/credentials/token"
     SIGN_XPATH = "/loginTicketResponse/credentials/sign"
 
-    def __init__(self, service):
+    def __init__(self, endpoints, key_file, crt_file, service):
+        self.endpoints = endpoints
+
         random.seed(datetime.now())
         now = datetime.now()  # up to 24h old
         tomorrow = now + timedelta(hours=10)  # up to 24h in the future
@@ -45,15 +47,16 @@ class AuthenticationRequest:
                 {'version': '1.0'},
                 E.header(
                     E.uniqueId(str(random.randint(0, 4294967295))),
-                    E.generationTime(now.isoformat()),
-                    E.expirationTime(tomorrow.isoformat()),
+                    E.generationTime(self.formatdate(now)),
+                    E.expirationTime(self.formatdate(tomorrow)),
                 ),
                 E.service(service)
             )
         )
         self.request_xml = etree.tostring(request_xml, pretty_print=True)
+        self.__sign(key_file, crt_file)
 
-    def sign(self, key_file, crt_file):
+    def __sign(self, key_file, crt_file):
         buf = MemoryBuffer(self.request_xml)
 
         smime = SMIME()
@@ -69,8 +72,8 @@ class AuthenticationRequest:
                 self.signed_request = part.get_payload(decode=False)
                 return self
 
-    def authenticate(self, url):
-        client = Client(url)
+    def authenticate(self):
+        client = Client(self.endpoints.WSAA)
         response_xml = client.service.loginCms(self.signed_request)
 
         response = etree.fromstring(response_xml.encode('utf-8'))
@@ -80,8 +83,9 @@ class AuthenticationRequest:
         return self.token, self.sign
 
 if __name__ == "__main__":
-    request = AuthenticationRequest("wsfe")
-    signed_request = request.sign("hyperion.key", "hyperion.crt")
-    token, sign = request.authenticate(AuthenticationRequest.PROD_WSDL)
+    from endpoints import Testing
+    request = AuthenticationRequest(Testing(), "hyperion.key",
+                                        "hyperion.crt", "wsfe")
+    token, sign = request.authenticate()
 
-    print("token: {}\nsign:{}".format(token, sign))
+    print("token: {}\n\nsign: {}".format(token, sign))
