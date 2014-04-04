@@ -23,17 +23,45 @@ from suds.client import Client
 import utils
 
 
+class Invoice:
+
+    def __init__(self, invoice_type, amount, sales_point):
+        self.amount = amount
+        self.invoice_type = invoice_type
+        self.sales_point = sales_point
+
+
+class InvoiceLine:
+
+    def __init__(self, concept, document_type, document_number, from_invoice,
+                 to_invoice, date, total, service_from_date, service_to_date,
+                 expiration_date, net_untaxed = 0, net_taxed = None,
+                 exempt_amount = 0, tax_amount = 0, vat_amount = 0,
+                 currency = "PES", currency_quote = "1.0000"):
+        self.concept = concept
+        self.document_type = document_type
+        self.document_number = document_number
+        self.from_invoice = from_invoice
+        self.to_invoice = to_invoice
+        self.date = date
+        self.total = total
+        self.net_untaxed = net_untaxed
+        self.net_taxed = net_taxed or total
+        self.exempt_amount = exempt_amount
+        self.tax_amount = tax_amount
+        self.vat_amount = vat_amount
+        self.service_from_date = service_from_date
+        self.service_to_date = service_to_date
+        self.expiration_date = expiration_date
+        self.currency = currency
+        self.currency_quote = currency_quote
+
+
 class ElectronicInvoiceService:
 
-    PROD_WSDL = "https://servicios1.afip.gov.ar/wsfev1/service.asmx?WSDL"
-    TEST_WSDL = "https://wswhomo.afip.gov.ar/wsfev1/service.asmx?WSDL"
-
-    def __init__(self, token, sign, cuit, prod):
-        if prod:
-            url = ElectronicInvoiceService.PROD_WSDL
-        else:
-            url = ElectronicInvoiceService.TEST_WSDL
-        self.client = Client(url)
+    def __init__(self, endpoints, token, sign, cuit):
+        self.endpoints = endpoints
+        self.client = Client(endpoints.WSFEV1)
 
         self.auth = self.client.factory.create('FEAuthRequest')
         self.auth.Token = token
@@ -42,49 +70,46 @@ class ElectronicInvoiceService:
 
     ### Services
 
-    def last_authorized_id(self, url, punto_venta, tipo_comprobante):
+    def last_authorized_id(self, punto_venta, tipo_comprobante):
         response_xml = self.client.service. \
             FECompUltimoAutorizado(self.auth, punto_venta, tipo_comprobante)
         return response_xml.CbteNro
 
-    def authorize_invoice(self, invoice, *details):
+    def authorize_invoice(self, invoice, *invoice_lines):
         req = self.client.factory.create('FECAERequest')
 
-        req.FeCabReq = invoice
-        for d in details:
-            req.FeDetReq.FECAEDetRequest.append(d)
+        print self.client
 
-        response_xml = self.client.service.FECAESolicitar(self.auth,
-                                                          req)
+        #req.FeCabReq = self.client.factory.create('FECabRequest')
+        req.FeCabReq.CantReg = invoice.amount
+        req.FeCabReq.PtoVta = invoice.sales_point
+        req.FeCabReq.CbteTipo = invoice.invoice_type
+
+        print req
+
+        for line in invoice_lines:
+            line_req = self.client.factory.create('FECAEDetRequest')
+            line_req.Concepto = line.concept
+            line_req.DocTipo = line.document_type
+            line_req.DocNro = line.document_number
+            line_req.CbteDesde = line.from_invoice
+            line_req.CbteHasta = line.to_invoice
+            line_req.CbteFch = line.date
+            line_req.ImpTotal = line.total
+            line_req.ImpTotConc = line.net_untaxed
+            line_req.ImpNeto = line.net_taxed
+            line_req.ImpOpEx = line.exempt_amount
+            line_req.ImpTrib = line.tax_amount
+            line_req.ImpIVA = line.vat_amount
+            line_req.FchServDesde = line.service_from_date
+            line_req.FchServHasta = line.expiration_date
+            line_req.FchVtoPago = line.expiration_date
+            line_req.MonId = line.currency,
+            line_req.MonCotiz = line.currency_quote
+
+            req.FeDetReq.FECAEDetRequest.append(line_req)
+
+        response_xml = self.client.service.FECAESolicitar(self.auth, req)
+
+        # TODO: parse this a bit
         return response_xml
-
-    ### Factory
-
-    def new_invoice(self, amount, sales_point, invoice_type):
-        req = self.client.factory.create('FECabRequest')
-        req.CantReg = 1
-        req.PtoVta = 1
-        req.CbteTipo = 11
-        return req
-
-    def new_invoice_line(self, concept, doc_type, doc_num, num_from, num_to,
-                         date, total, service_from, service_to, expiration):
-        req = self.client.factory.create('FEDetRequest')
-        req.Concepto = concept
-        req.DocTipo = doc_type
-        req.DocNro = doc_num
-        req.CbteDesde = num_from
-        req.CbteHasta = num_to
-        req.CbteFch = date
-        req.ImpTotal = total
-        req.ImpTotConc = 0
-        req.ImpNeto = total
-        req.ImpOpEx = 0
-        req.ImpTrib = 0
-        req.ImpIVA = 0
-        req.FchServDesde = service_from
-        req.FchServHasta = service_to
-        req.FchVtoPago = expiration
-        req.MonId = "PES"
-        req.MonCotiz = "1.0000"
-        return req
