@@ -76,14 +76,10 @@ class ElectronicInvoiceService:
     def authorize_invoice(self, invoice, *invoice_lines):
         req = self.client.factory.create('FECAERequest')
 
-        print self.client
-
         # req.FeCabReq = self.client.factory.create('FECabRequest')
         req.FeCabReq.CantReg = invoice.amount
         req.FeCabReq.PtoVta = invoice.sales_point
         req.FeCabReq.CbteTipo = invoice.invoice_type
-
-        print req
 
         for line in invoice_lines:
             line_req = self.client.factory.create('FECAEDetRequest')
