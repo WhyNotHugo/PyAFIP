@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2014 Hugo Osvaldo Barrera <hugo@osvaldobarrera.com.ar>
+# Copyright (c) 2014 Hugo Osvaldo Barrera <hugo@barrera.io>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -59,18 +59,18 @@ class InvoiceLine:
 
 class ElectronicInvoiceService:
 
-    def __init__(self, endpoints, token, sign, cuit):
+    def __init__(self, endpoints, ticket, cuit):
         self.endpoints = endpoints
         self.client = Client(endpoints.WSFEV1)
 
         self.auth = self.client.factory.create('FEAuthRequest')
-        self.auth.Token = token
-        self.auth.Sign = sign
+        self.auth.Token = ticket.token
+        self.auth.Sign = ticket.sign
         self.auth.Cuit = cuit
 
-    def last_authorized_id(self, punto_venta, tipo_comprobante):
+    def last_authorized_id(self, sales_point, invoice_type):
         response_xml = self.client.service. \
-            FECompUltimoAutorizado(self.auth, punto_venta, tipo_comprobante)
+            FECompUltimoAutorizado(self.auth, sales_point, invoice_type)
         return response_xml.CbteNro
 
     def authorize_invoice(self, invoice, *invoice_lines):
