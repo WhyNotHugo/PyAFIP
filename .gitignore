@@ -2,3 +2,4 @@
 build
 *.crt
 *.key
+ticket
