@@ -211,6 +211,8 @@ class InvoiceService(AfipFormatMixin):
             FECompUltimoAutorizado(self.auth, sales_point, invoice_type)
         return response_xml.CbteNro
 
+    # TODO: get_invoice: FECompConsultar
+
 
 class ReceiptType(GenericAfipType):
     pass
