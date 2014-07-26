@@ -5,7 +5,7 @@ setup(
     version='1.0.0',
     author='Hugo Osvaldo Barrera',
     author_email='hugo@barrera.io',
-    packages=['PyAFIP'],
+    packages=['afip'],
     url='https://github.com/hobarrera/PyAFIP.git',
     license='LICENSE',
     description="A basic python library for accesing some of AFIP's web services.",
