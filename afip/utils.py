@@ -1,13 +1,15 @@
-# -*- coding: utf-8 -*-
-
-# http://askubuntu.com/questions/116020/python-https-requests-urllib2-to-some-sites-fail-on-ubuntu-12-04-without-proxy
-
 import httplib
 from httplib import HTTPConnection, HTTPS_PORT
 import ssl
 import socket
 import sys
 import logging
+
+
+"""
+See http://askubuntu.com/questions/116020/ for details on why the following is
+necessary.
+"""
 
 
 class HTTPSConnection(HTTPConnection):

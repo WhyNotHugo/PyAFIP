@@ -1,3 +1,6 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+
 from distutils.core import setup
 
 setup(
@@ -8,7 +11,8 @@ setup(
     packages=['afip'],
     url='https://github.com/hobarrera/PyAFIP.git',
     license='LICENSE',
-    description="A basic python library for accesing some of AFIP's web services.",
+    description="A basic python library for accesing some of AFIP's web" +
+        "services.",
     #long_description=open('README.md').read(),
     requires=[
         "suds (>= 0.4)",

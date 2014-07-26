@@ -1,6 +1,3 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2014 Hugo Osvaldo Barrera <hugo@barrera.io>
 #
 # Permission to use, copy, modify, and distribute this software for any

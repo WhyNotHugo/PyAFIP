@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 
 from afip.endpoints import Testing
 from afip.wsaa import AuthorizationTicket
