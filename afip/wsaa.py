@@ -46,8 +46,8 @@ class AuthorizationTicket(BaseRequest):
                 {'version': '1.0'},
                 E.header(
                     E.uniqueId(str(random.randint(0, 4294967295))),
-                    E.generationTime(self.formatdate(now)),
-                    E.expirationTime(self.formatdate(tomorrow)),
+                    E.generationTime(self.format_date(now)),
+                    E.expirationTime(self.format_date(tomorrow)),
                 ),
                 E.service(service)
             )

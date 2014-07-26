@@ -48,7 +48,7 @@ def enableDebugLog():
 
 class BaseRequest:
 
-    def formatdate(self, date):
+    def format_date(self, date):
         """
         Sometimes, and only sometimes, TESTING will complain about an invalid
         date format if you use .isoformat() for the authenticatión
@@ -57,3 +57,6 @@ class BaseRequest:
         This is the exact format their documentation uses.
         """
         return date.strftime("%Y-%m-%dT%H:%M:%S-00:00")
+
+    def format_short_date(self, date):
+        return date.strftime("%Y%m%d")
