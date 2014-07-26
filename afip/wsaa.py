@@ -20,7 +20,7 @@ from M2Crypto.SMIME import SMIME
 from datetime import datetime, timedelta
 from lxml import etree
 from lxml.builder import E
-from utils import BaseRequest
+from utils import AfipFormatMixin
 from suds.client import Client
 
 import email
@@ -28,7 +28,7 @@ import json
 import random
 
 
-class AuthorizationTicket(BaseRequest):
+class AuthorizationTicket(AfipFormatMixin):
 
     TOKEN_XPATH = "/loginTicketResponse/credentials/token"
     SIGN_XPATH = "/loginTicketResponse/credentials/sign"

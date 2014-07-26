@@ -46,7 +46,7 @@ def enableDebugLog():
     logger.root.addHandler(logging.StreamHandler(sys.stdout))
 
 
-class BaseRequest:
+class AfipFormatMixin:
 
     def format_date(self, date):
         """
@@ -60,3 +60,14 @@ class BaseRequest:
 
     def format_short_date(self, date):
         return date.strftime("%Y%m%d")
+
+
+class AfipException(Exception):
+
+    """
+    Wraps around errors returns by AFIP's WS.
+    """
+
+    def __init__(self, err):
+        Exception.__init__(self, "Error {}: {}"
+                           .format(err.Code, err.Msg.encode("latin-1")))
