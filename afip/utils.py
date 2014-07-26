@@ -11,6 +11,7 @@ import logging
 
 
 class HTTPSConnection(HTTPConnection):
+
     "This class allows communication via SSL."
     default_port = HTTPS_PORT
 
