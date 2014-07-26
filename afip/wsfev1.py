@@ -38,8 +38,8 @@ class InvoiceDetail:
     def __init__(self, concept, document_type, document_number, from_invoice,
                  to_invoice, date, total, service_from_date, service_to_date,
                  expiration_date, net_untaxed=0, net_taxed=None,
-                 exempt_amount=0, tax_amount=0, vat_amount=0,
-                 currency="PES", currency_quote="1.0000"):
+                 exempt_amount=0, tax_amount=0, currency="PES",
+                 currency_quote="1.0000"):
         self.concept = concept
         self.document_type = document_type
         self.document_number = document_number
@@ -51,7 +51,6 @@ class InvoiceDetail:
         self.net_taxed = net_taxed or total
         self.exempt_amount = exempt_amount
         self.tax_amount = tax_amount
-        self.vat_amount = vat_amount
         self.service_from_date = service_from_date
         self.service_to_date = service_to_date
         self.expiration_date = expiration_date
@@ -109,7 +108,6 @@ class InvoiceService(AfipFormatMixin):
             detail_req.ImpNeto = detail.net_taxed
             detail_req.ImpOpEx = detail.exempt_amount
             detail_req.ImpTrib = detail.tax_amount
-            detail_req.ImpIVA = detail.vat_amount
             detail_req.FchServDesde = self \
                 .format_short_date(detail.service_from_date)
             detail_req.FchServHasta = self \
@@ -119,12 +117,15 @@ class InvoiceService(AfipFormatMixin):
             detail_req.MonId = detail.currency
             detail_req.MonCotiz = detail.currency_quote
 
+            detail.vat_amount = 0
             for vat in detail.vats:
                 vat_req = self.client.factory.create('AlicIva')
                 vat_req.Id = vat.type
                 vat_req.BaseImp = vat.base
                 vat_req.Importe = vat.amount
+                detail.vat_amount += vat.amount
                 detail_req.Iva.AlicIva.append(vat_req)
+            detail_req.ImpIVA = detail.vat_amount
 
             req.FeDetReq.FECAEDetRequest.append(detail_req)
 

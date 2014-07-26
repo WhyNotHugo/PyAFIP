@@ -66,7 +66,6 @@ invoice_detail = InvoiceDetail(concept=2,
                                date=now,
                                total=1210,
                                net_taxed=1000,
-                               vat_amount=210,
                                service_from_date=now,
                                service_to_date=now,
                                expiration_date=expiration)
