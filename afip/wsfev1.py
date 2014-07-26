@@ -16,11 +16,9 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
-from lxml import etree
-from lxml.builder import ElementMaker
 from suds.client import Client
 
-import utils
+from utils import AfipFormatMixin, AfipException
 
 
 class Invoice:
@@ -29,9 +27,13 @@ class Invoice:
         self.amount = amount
         self.invoice_type = invoice_type
         self.sales_point = sales_point
+        self.details = []
+
+    def add_detail(self, detail):
+        self.details.append(detail)
 
 
-class InvoiceLine:
+class InvoiceDetail:
 
     def __init__(self, concept, document_type, document_number, from_invoice,
                  to_invoice, date, total, service_from_date, service_to_date,
@@ -56,8 +58,21 @@ class InvoiceLine:
         self.currency = currency
         self.currency_quote = currency_quote
 
+        self.vats = []
 
-class ElectronicInvoiceService:
+    def add_vat(self, vat):
+        self.vats.append(vat)
+
+
+class Vat:
+
+    def __init__(self, type, base, amount):
+        self.type = type
+        self.base = base
+        self.amount = amount
+
+
+class InvoiceService(AfipFormatMixin):
 
     def __init__(self, endpoints, ticket, cuit):
         self.endpoints = endpoints
@@ -73,7 +88,7 @@ class ElectronicInvoiceService:
             FECompUltimoAutorizado(self.auth, sales_point, invoice_type)
         return response_xml.CbteNro
 
-    def authorize_invoice(self, invoice, *invoice_lines):
+    def authorize_invoice(self, invoice):
         req = self.client.factory.create('FECAERequest')
 
         # req.FeCabReq = self.client.factory.create('FECabRequest')
@@ -81,29 +96,45 @@ class ElectronicInvoiceService:
         req.FeCabReq.PtoVta = invoice.sales_point
         req.FeCabReq.CbteTipo = invoice.invoice_type
 
-        for line in invoice_lines:
-            line_req = self.client.factory.create('FECAEDetRequest')
-            line_req.Concepto = line.concept
-            line_req.DocTipo = line.document_type
-            line_req.DocNro = line.document_number
-            line_req.CbteDesde = line.from_invoice
-            line_req.CbteHasta = line.to_invoice
-            line_req.CbteFch = line.date
-            line_req.ImpTotal = line.total
-            line_req.ImpTotConc = line.net_untaxed
-            line_req.ImpNeto = line.net_taxed
-            line_req.ImpOpEx = line.exempt_amount
-            line_req.ImpTrib = line.tax_amount
-            line_req.ImpIVA = line.vat_amount
-            line_req.FchServDesde = line.service_from_date
-            line_req.FchServHasta = line.expiration_date
-            line_req.FchVtoPago = line.expiration_date
-            line_req.MonId = line.currency,
-            line_req.MonCotiz = line.currency_quote
+        for detail in invoice.details:
+            detail_req = self.client.factory.create('FECAEDetRequest')
+            detail_req.Concepto = detail.concept
+            detail_req.DocTipo = detail.document_type
+            detail_req.DocNro = detail.document_number
+            detail_req.CbteDesde = detail.from_invoice
+            detail_req.CbteHasta = detail.to_invoice
+            detail_req.CbteFch = self.format_short_date(detail.date)
+            detail_req.ImpTotal = detail.total
+            detail_req.ImpTotConc = detail.net_untaxed
+            detail_req.ImpNeto = detail.net_taxed
+            detail_req.ImpOpEx = detail.exempt_amount
+            detail_req.ImpTrib = detail.tax_amount
+            detail_req.ImpIVA = detail.vat_amount
+            detail_req.FchServDesde = self \
+                .format_short_date(detail.service_from_date)
+            detail_req.FchServHasta = self \
+                .format_short_date(detail.service_to_date)
+            detail_req.FchVtoPago = self \
+                .format_short_date(detail.expiration_date)
+            detail_req.MonId = detail.currency
+            detail_req.MonCotiz = detail.currency_quote
 
-            req.FeDetReq.FECAEDetRequest.append(line_req)
+            for vat in detail.vats:
+                vat_req = self.client.factory.create('AlicIva')
+                vat_req.Id = vat.type
+                vat_req.BaseImp = vat.base
+                vat_req.Importe = vat.amount
+                detail_req.Iva.AlicIva.append(vat_req)
+
+            req.FeDetReq.FECAEDetRequest.append(detail_req)
 
         response_xml = self.client.service.FECAESolicitar(self.auth, req)
 
-        # TODO: parse this a bit
-        return response_xml
+        cae_data = response_xml.FeDetResp.FECAEDetResponse[0]
+        if cae_data.Resultado != "A" and hasattr(response_xml, "Errors"):
+            raise AfipException(response_xml.Errors.Err[0])
+        elif cae_data.Resultado != "A":
+            raise AfipException(cae_data.Observaciones.Obs[0])
+
+        invoice.cae = cae_data.CAE
+        invoice.cae_expiration = cae_data.CAEFchVto
