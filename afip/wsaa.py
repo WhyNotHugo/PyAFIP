@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2014 Hugo Osvaldo Barrera <hugo@osvaldobarrera.com.ar>
+# Copyright (c) 2014 Hugo Osvaldo Barrera <hugo@barrera.io>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -17,7 +17,6 @@
 
 from M2Crypto.BIO import MemoryBuffer
 from M2Crypto.SMIME import SMIME
-from StringIO import StringIO
 from datetime import datetime, timedelta
 from lxml import etree
 from lxml.builder import E
@@ -25,17 +24,19 @@ from utils import BaseRequest
 from suds.client import Client
 
 import email
+import json
 import random
 
 
-class AuthenticationRequest(BaseRequest):
+class AuthorizationTicket(BaseRequest):
 
     TOKEN_XPATH = "/loginTicketResponse/credentials/token"
     SIGN_XPATH = "/loginTicketResponse/credentials/sign"
 
     def __init__(self, endpoints, key_file, crt_file, service):
         self.endpoints = endpoints
-
+        self.__key_file = key_file
+        self.__crt_file = crt_file
         random.seed(datetime.now())
         now = datetime.now()  # up to 24h old
         tomorrow = now + timedelta(hours=10)  # up to 24h in the future
@@ -52,13 +53,13 @@ class AuthenticationRequest(BaseRequest):
             )
         )
         self.request_xml = etree.tostring(request_xml, pretty_print=True)
-        self.__sign(key_file, crt_file)
+        self.__sign()
 
-    def __sign(self, key_file, crt_file):
+    def __sign(self):
         buf = MemoryBuffer(self.request_xml)
 
         smime = SMIME()
-        smime.load_key(key_file, crt_file)
+        smime.load_key(self.__key_file, self.__crt_file)
 
         signed_data = smime.sign(buf, 0)
         out = MemoryBuffer()
@@ -70,7 +71,7 @@ class AuthenticationRequest(BaseRequest):
                 self.signed_request = part.get_payload(decode=False)
                 return self
 
-    def authenticate(self):
+    def login(self):
         client = Client(self.endpoints.WSAA)
         response_xml = client.service.loginCms(self.signed_request)
 
@@ -78,14 +79,10 @@ class AuthenticationRequest(BaseRequest):
         self.token = response.xpath(self.TOKEN_XPATH)[0].text
         self.sign = response.xpath(self.SIGN_XPATH)[0].text
 
-        return self.token, self.sign
+    def dump(self):
+        return json.dumps({'token': self.token, 'sign': self.sign}, indent=2)
 
-if __name__ == "__main__":
-    from endpoints import Testing
-    request = AuthenticationRequest(Testing(),
-                                    "hyperion.key",
-                                    "hyperion.crt",
-                                    "wsfe")
-    token, sign = request.authenticate()
-
-    print("token: {}\n\nsign: {}".format(token, sign))
+    def load(self, json_data):
+        data = json.loads(json_data)
+        self.token = data["token"]
+        self.sign = data["sign"]
