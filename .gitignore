@@ -3,3 +3,5 @@ build
 *.crt
 *.key
 ticket
+PyAfip.egg-info
+env
