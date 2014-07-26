@@ -18,7 +18,7 @@
 
 from suds.client import Client
 
-from utils import AfipFormatMixin, AfipException
+from utils import AfipFormatMixin, AfipException, GenericAfipType
 
 
 class Invoice:
@@ -82,11 +82,6 @@ class InvoiceService(AfipFormatMixin):
         self.auth.Sign = ticket.sign
         self.auth.Cuit = cuit
 
-    def last_authorized_id(self, sales_point, invoice_type):
-        response_xml = self.client.service. \
-            FECompUltimoAutorizado(self.auth, sales_point, invoice_type)
-        return response_xml.CbteNro
-
     def authorize_invoice(self, invoice):
         req = self.client.factory.create('FECAERequest')
 
@@ -139,3 +134,111 @@ class InvoiceService(AfipFormatMixin):
 
         invoice.cae = cae_data.CAE
         invoice.cae_expiration = cae_data.CAEFchVto
+
+    def get_receipt_types(self):
+        response_xml = self.client.service.FEParamGetTiposCbte(self.auth)
+        receipt_types = []
+        for result in response_xml.ResultGet.CbteTipo:
+            receipt_type = ReceiptType(result.Id,
+                                       result.Desc.encode("UTF-8"))
+            receipt_types.append(receipt_type)
+        return receipt_types
+
+    def get_concept_types(self):
+        response_xml = self.client.service.FEParamGetTiposConcepto(self.auth)
+        concept_types = []
+        for result in response_xml.ResultGet.ConceptoTipo:
+            concept_type = ConceptType(result.Id,
+                                       result.Desc.encode("UTF-8"))
+            concept_types.append(concept_type)
+        return concept_types
+
+    def get_document_types(self):
+        response_xml = self.client.service.FEParamGetTiposDoc(self.auth)
+        document_types = []
+        for result in response_xml.ResultGet.DocTipo:
+            document_type = DocumentType(result.Id,
+                                         result.Desc.encode("UTF-8"))
+            document_types.append(document_type)
+        return document_types
+
+    def get_vat_types(self):
+        response_xml = self.client.service.FEParamGetTiposIva(self.auth)
+        vat_types = []
+        for result in response_xml.ResultGet.IvaTipo:
+            vat_type = VatType(result.Id,
+                               result.Desc.encode("UTF-8"))
+            vat_types.append(vat_type)
+        return vat_types
+
+    def get_currency_types(self):
+        response_xml = self.client.service.FEParamGetTiposMonedas(self.auth)
+        currency_types = []
+        for result in response_xml.ResultGet.Moneda:
+            currency_type = VatType(result.Id,
+                                    result.Desc.encode("UTF-8"))
+            currency_types.append(currency_type)
+        return currency_types
+
+    # Optional data types?
+
+    # Tax (tribute) types?
+
+    def get_sales_points(self):
+        response_xml = self.client.service.FEParamGetPtosVenta(self.auth)
+        sales_points = []
+        for result in response_xml.ResultGet.PtoVenta:
+            sales_point = SalesPoint(result.Nro,
+                                     result.EmisionTipo,
+                                     result.Bloqueado != "N",
+                                     result.FchBaja)
+            sales_points.append(sales_point)
+        return sales_points
+
+    # Currency quotes? (useless since only PES is available ATM)
+
+    def ping(self):
+        response_xml = self.client.service.FEDummy(self.auth)
+        response = {
+            "AppServer": response_xml.AppServer,
+            "DbServer": response_xml.DbServer,
+            "AuthServer": response_xml.AuthServer
+        }
+        return response
+
+    def last_authorized_id(self, sales_point, invoice_type):
+        response_xml = self.client.service. \
+            FECompUltimoAutorizado(self.auth, sales_point, invoice_type)
+        return response_xml.CbteNro
+
+
+class ReceiptType(GenericAfipType):
+    pass
+
+
+class ConceptType(GenericAfipType):
+    pass
+
+
+class DocumentType(GenericAfipType):
+    pass
+
+
+class VatType(GenericAfipType):
+    pass
+
+
+class SalesPoint:
+
+    def __init__(self, number, type, blocked, deletion_date):
+        self.number = number
+        self.type = type
+        self.blocked = blocked
+        self.deletion_date = deletion_date
+
+    def __repr__(self):
+        return "Sales Point {}, uses {}, {}, deleted: {}" \
+            .format(self.number, self.type,
+                    "blocked" if self.blocked else "unblocked",
+                    "No" if self.deletion_date == "NULL" else
+                    self.deletion_date)

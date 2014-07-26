@@ -5,8 +5,11 @@ from afip.wsaa import AuthorizationTicket
 from afip.wsfev1 import InvoiceService, Invoice, InvoiceDetail, Vat
 from datetime import datetime, timedelta
 
-# run test/wsaa.py > ticket to generate a ticket file
+import json
+
+# Run `test/wsaa.py > ticket` to generate a ticket file.
 ticket_data = open("ticket")
+# This is the only variable you should need to modify.
 cuit = 20329642330
 
 ticket = AuthorizationTicket(Testing(), "hyperion.key", "hyperion.crt", "wsfe")
@@ -74,3 +77,32 @@ invoice.add_detail(invoice_detail)
 invoice_service.authorize_invoice(invoice)
 print("Validated invoice, CAE: {}, exp: {}.".format(invoice.cae,
                                                     invoice.cae_expiration))
+
+# ~~~ Test auxilary methods ~~~
+
+print("~~~ Receipt Types ~~~")
+for receipt_type in invoice_service.get_receipt_types():
+    print(receipt_type)
+
+print("~~~ Concept Types ~~~")
+for concept_type in invoice_service.get_concept_types():
+    print(concept_type)
+
+print("~~~ Document Types ~~~")
+for document_type in invoice_service.get_document_types():
+    print(document_type)
+
+print("~~~ Vat Types ~~~")
+for vat_type in invoice_service.get_vat_types():
+    print(vat_type)
+
+print("~~~ Currency Types ~~~")
+for currency_type in invoice_service.get_currency_types():
+    print(currency_type)
+
+print("~~~ Sales points ~~~")
+for sales_point in invoice_service.get_sales_points():
+    print(sales_point)
+
+print("~~~ Ping ~~~")
+print(json.dumps(invoice_service.ping()))

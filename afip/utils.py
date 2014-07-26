@@ -71,3 +71,13 @@ class AfipException(Exception):
     def __init__(self, err):
         Exception.__init__(self, "Error {}: {}"
                            .format(err.Code, err.Msg.encode("latin-1")))
+
+
+class GenericAfipType:
+
+    def __init__(self, id, description):
+        self.id = id
+        self.description = description
+
+    def __repr__(self):
+        return "{}: {}".format(self.id, self.description)
