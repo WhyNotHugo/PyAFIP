@@ -53,7 +53,7 @@ class AfipFormatMixin:
     def format_date(self, date):
         """
         Sometimes, and only sometimes, TESTING will complain about an invalid
-        date format if you use .isoformat() for the authenticatión
+        date format if you use .isoformat() for the authentication
         generationTime.
 
         This is the exact format their documentation uses.
