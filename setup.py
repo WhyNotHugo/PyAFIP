@@ -8,12 +8,12 @@ setup(
     version='1.0.0',
     author='Hugo Osvaldo Barrera',
     author_email='hugo@barrera.io',
-    packages=['afip'],
+    packages=['afip', 'afip.wsfev1'],
     url='https://github.com/hobarrera/PyAFIP.git',
     license='LICENSE',
     description="A basic python library for accesing some of AFIP's web" +
         "services.",
-    #long_description=open('README.md').read(),
+    # long_description=open('README.md').read(),
     requires=[
         "suds (>= 0.4)",
         "M2Crypto (>= 0.22.3)",
